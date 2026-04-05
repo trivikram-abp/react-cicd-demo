@@ -2,8 +2,9 @@ name: CI/CD — Deploy to PRODUCTION (prod branch)
 
 on:
   push:
-    branches:
-      - prod
+    branches: [prod]
+  pull_request:
+    branches: [prod]
 
 jobs:
   ci:
@@ -73,4 +74,4 @@ jobs:
             --paths "/*"
 
       - name: Print PRODUCTION URL
-        run: echo "PRODUCTION live at: https://d91boe496egr4.cloudfront.net"
+        run: echo 'PRODUCTION live at https://d91boe496egr4.cloudfront.net'
