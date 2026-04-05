@@ -64,7 +64,13 @@ jobs:
       - name: Upload index.html with no-cache header
         run: |
           aws s3 cp build/index.html s3://${{ secrets.S3_BUCKET_TEST }}/index.html \
-            --cache-control "no-cache, no-store, must-revalidate"
+            --cache-control "no-cache"
+
+      - name: Invalidate TEST CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CF_DISTRIBUTION_ID_TEST }} \
+            --paths "/*"
 
       - name: Print TEST URL
-        run: echo "TEST environment live at: http://react-cicd-demo-trivikram-test.s3-website.ap-south-1.amazonaws.com"
+        run: echo "TEST environment live at: https://d37flf17gk0oex.cloudfront.net"
