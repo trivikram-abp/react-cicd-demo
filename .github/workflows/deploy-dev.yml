@@ -1,0 +1,70 @@
+name: CI/CD — Deploy to TEST (dev branch)
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  ci:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --watchAll=false --passWithNoTests
+        env:
+          CI: true
+
+  deploy-test:
+    name: Deploy to TEST environment
+    runs-on: ubuntu-latest
+    needs: ci
+    environment: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+        env:
+          CI: false
+          REACT_APP_ENV: test
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Sync build to TEST S3 bucket
+        run: aws s3 sync build/ s3://${{ secrets.S3_BUCKET_TEST }} --delete
+
+      - name: Upload index.html with no-cache header
+        run: |
+          aws s3 cp build/index.html s3://${{ secrets.S3_BUCKET_TEST }}/index.html \
+            --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Print TEST URL
+        run: echo "TEST environment live at: http://react-cicd-demo-trivikram-test.s3-website.ap-south-1.amazonaws.com"

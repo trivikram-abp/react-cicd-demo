@@ -1,12 +1,9 @@
-name: CI/CD — Deploy to AWS
+name: CI/CD — Deploy to PRODUCTION (prod branch)
 
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - prod
 
 jobs:
   ci:
@@ -30,11 +27,11 @@ jobs:
         env:
           CI: true
 
-  deploy-aws:
-    name: Deploy to AWS S3 + CloudFront
+  deploy-production:
+    name: Deploy to PRODUCTION environment
     runs-on: ubuntu-latest
     needs: ci
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,6 +40,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
@@ -51,6 +49,7 @@ jobs:
         run: npm run build
         env:
           CI: false
+          REACT_APP_ENV: production
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -59,7 +58,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      - name: Sync build to S3
+      - name: Sync build to PRODUCTION S3 bucket
         run: aws s3 sync build/ s3://${{ secrets.S3_BUCKET }} --delete
 
       - name: Upload index.html with no-cache header
@@ -73,5 +72,5 @@ jobs:
             --distribution-id ${{ secrets.CF_DISTRIBUTION_ID }} \
             --paths "/*"
 
-      - name: Print live URL
-        run: echo "Live at https://d91boe496egr4.cloudfront.net"
+      - name: Print PRODUCTION URL
+        run: echo "PRODUCTION live at: https://d91boe496egr4.cloudfront.net"
