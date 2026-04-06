@@ -1,0 +1,34 @@
+name: Terraform Validate
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+
+jobs:
+  validate:
+    name: Validate Terraform configs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.7.0'
+
+      - name: Terraform init & validate — AWS
+        working-directory: terraform/aws
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Terraform init & validate — GCP
+        working-directory: terraform/gcp
+        run: |
+          terraform init -backend=false
+          terraform validate
