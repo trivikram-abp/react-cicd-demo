@@ -1,0 +1,65 @@
+name: CI/CD — Deploy to GCP PRODUCTION (prod branch)
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  ci-gcp-prod:
+    name: Build & Test (GCP Prod)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --watchAll=false --passWithNoTests
+        env:
+          CI: true
+
+  deploy-gcp-prod:
+    name: Deploy to GCP PRODUCTION (GCS)
+    runs-on: ubuntu-latest
+    needs: ci-gcp-prod
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+        env:
+          CI: false
+          REACT_APP_ENV: production
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Sync build to GCS PRODUCTION bucket
+        run: gsutil -m rsync -r -d build/ gs://${{ secrets.GCS_BUCKET }}-prod
+
+      - name: Print GCP PRODUCTION info
+        run: echo 'GCP PRODUCTION deployment complete'

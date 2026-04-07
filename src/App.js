@@ -16,7 +16,7 @@ function App() {
   return (
     <div className="app-container">
       <EnvironmentBanner />
-      <h1 className="heading">Hello World Check</h1>
+      <h1 className="heading">Hello World Pappu</h1>
       <p className="subtitle">CI/CD Demo — React App</p>
       <p className="timestamp">Deployed at: {new Date().toLocaleString()}</p>
       <p className="version">v1.0.0</p>
